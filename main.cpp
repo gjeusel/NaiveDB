@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int main() {    
+int main() {
     //Import the csv
     Table person_table("person");
     person_table.importSchema("person_schema.txt");
@@ -17,49 +17,62 @@ int main() {
     person_table.printHeaderFile(5);
     // // Cursor cursor = person_table.query("SELECT *");
     // // person_table.query("SELECT _id, name, points WHERE _id=123, name = 'bruno alves', points > - 50, points < 100");
-    
+
     // TableBenchmark benchmark(&person_table);
     // benchmark.runBenchmark();
-    
+
     Table company_table("company");
     company_table.importSchema("company_schema.txt");
     company_table.convertFromCSV("company.csv");
-    
+
     company_table.print(5);
     company_table.printHeaderFile(5);
-    
+
     Table worked_table("worked");
     worked_table.importSchema("worked_schema.txt");
     worked_table.convertFromCSV("worked.csv");
-    
+
     worked_table.print(5);
     worked_table.printHeaderFile(5);
-    
+
     JoinBenchmark joinbenchmark(&company_table, &person_table, &worked_table);
     joinbenchmark.runBenchmark();
-    
-    vector<vector<long long>>* joinResult = person_table.naiveJoin("_id", worked_table, "person_id");
-    
-    //Prints the joinned rows, using the joinResult structure
-    for(int i=0; i<=20; i++){
-    	for(int personCollumn=0; personCollumn <person_table.getSchema().getCols()->size(); personCollumn++){
-    		cout<<person_table.getRow(joinResult->at(i).at(0)).at(personCollumn)<< " | ";
-    	}
-    	for(int workedCollumn=0; workedCollumn <worked_table.getSchema().getCols()->size(); workedCollumn++){
-    		cout<<worked_table.getRow(joinResult->at(i).at(1)).at(workedCollumn)<< " | ";
-    	}
-    	cout <<endl;
+
+
+    vector<vector<long long>>* indexNestedJoin_result = person_table.indexNestedLoopJoin(&worked_table, "person_id", "_id", 10);
+    //Prints the joinned rows, using the indexNestedJoin_result structure
+    for(int i=0; i<indexNestedJoin_result->size(); i++){
+      for(int personCollumn=0; personCollumn <person_table.getSchema().getCols()->size(); personCollumn++){
+        cout<<person_table.getRow(indexNestedJoin_result->at(i).at(0)).at(personCollumn)<< " | ";
+      }
+      for(int workedCollumn=0; workedCollumn <worked_table.getSchema().getCols()->size(); workedCollumn++){
+        cout<<worked_table.getRow(indexNestedJoin_result->at(i).at(1)).at(workedCollumn)<< " | ";
+      }
+      cout <<endl;
     }
+
+
+    //vector<vector<long long>>* nestedJoin_result = person_table.nestedLoopJoin(&worked_table, "person_id", "_id");
+
+    ////Prints the joinned rows, using the nestedJoin_result structure
+    //for(int i=0; i<=20; i++){
+    //  for(int personCollumn=0; personCollumn <person_table.getSchema().getCols()->size(); personCollumn++){
+    //    cout<<person_table.getRow(nestedJoin_result->at(i).at(0)).at(personCollumn)<< " | ";
+    //  }
+    //  for(int workedCollumn=0; workedCollumn <worked_table.getSchema().getCols()->size(); workedCollumn++){
+    //    cout<<worked_table.getRow(nestedJoin_result->at(i).at(1)).at(workedCollumn)<< " | ";
+    //  }
+    //  cout <<endl;
+    //}
+
+    //delete nestedJoin_result;
+    delete indexNestedJoin_result;
+    //delete nestedJoin_result;
 
     person_table.drop();
     company_table.drop();
     worked_table.drop();
-	    
-    
 
-        // for (vector<string>::iterator it = thisRow.begin(); it != thisRow.end(); it++) {
-        //     cout << (*it) << " | ";
-        // }
-        // cout << endl;
+
     return 0;
 }
